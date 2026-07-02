@@ -1,0 +1,1 @@
+# terraform-dynamo-db
