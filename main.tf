@@ -1,20 +1,18 @@
-provider "aws" {
-  region = "us-east-1"
-}
+
 
 resource "aws_dynamodb_table" "order_table" {
-  name           = "order-table"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "user_id"
-  range_key = "order_id"
+  name         = var.table-name
+  billing_mode = var.billing-mode
+  hash_key     = var.hash-key
+  range_key    = var.range-key
 
   attribute {
-    name = "order_id"
-    type = "S"
+    name = var.range-key
+    type = var.attribute-type
   }
   attribute {
-    name = "user_id"
-    type = "S"
+    name = var.hash-key
+    type = var.attribute-type
   }
   attribute {
     name = "order_status"
@@ -22,20 +20,33 @@ resource "aws_dynamodb_table" "order_table" {
   }
 
   global_secondary_index {
-    name = "order_status_index"
-    hash_key = "order_status"
+    name            = "order_status_index"
+    hash_key        = "order_status"
     projection_type = "ALL"
   }
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
   point_in_time_recovery {
-    enabled = true
+    enabled = var.point-in-time-recovery
   }
   server_side_encryption {
-    enabled = true
+    enabled = var.server-side-encryption
   }
 
-  tags = {
-  Name        = "order-table"
-  Environment = "dev"
-  project     = "dynamodb-automation"
+  tags = var.tags
 }
+resource "aws_dynamodb_table_item" "order_table_item" {
+  table_name = aws_dynamodb_table.order_table.name
+  hash_key   = var.hash-key
+  range_key  = var.range-key
+
+  item = jsonencode({
+    user_id      = { "S" : "user123" }
+    order_id     = { "S" : "order456" }
+    order_status = { "S" : "pending" }
+    ttl          = { "N" : "1700000000" }
+
+  })
 }
